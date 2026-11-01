@@ -1,16 +1,24 @@
+# Python bytecode and virtual environments
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
+build/
+dist/
 .Python
 env/
 venv/
 .venv/
 .pytest_cache/
 .DS_Store
+
+# Local credentials
 .env
 .env.*
 !.env.example
-*.hmac_key
+
+# Prompt cache and local scratch data
 .cache/
+.adk/
 data/

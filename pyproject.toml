@@ -1,2 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "memoryguard"
+version = "0.1.0"
+description = "Write-time local CPU admission gating and action-time Clean-Room non-interference for persistent AI coding agent memory."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = [
+    "google-adk",
+    "google-genai",
+    "laya",
+    "pytest",
+    "tenacity",
+    "torch",
+    "transformers",
+]
+
+[tool.setuptools.packages.find]
+include = ["memoryguard*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]

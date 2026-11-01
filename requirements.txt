@@ -1,6 +1,7 @@
-google-genai
-laya
-pytest
-tenacity
-torch
-transformers
+google-adk       # Google Agent Development Kit for live multi-session agent demo
+google-genai     # Official Google GenAI SDK for Gemini API calls
+laya             # 421M parameter local decision model for admission gating
+pytest           # Unit and benchmark verification test framework
+tenacity         # Retry helper for transient network and API rate limits
+torch            # PyTorch runtime backend for local Laya model inference
+transformers     # Hugging Face transformers library for model loading
