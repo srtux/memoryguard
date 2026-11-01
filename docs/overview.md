@@ -2,7 +2,7 @@
 
 Persistent coding assistants save notes across sessions so you do not have to repeat test flags, directory layouts, or personal workflow habits. Saving raw session transcripts creates two coupled problems: everyday small talk crowds out useful context, and untrusted external text can plant instructions that hijack tool execution in a later session.
 
-MemoryGuard addresses both problems in one compact Python reference system (1,768 total lines across 14 files, with 960 lines in the core memoryguard package across 5 files). It separates what an agent **remembers** at write time from what an agent **trusts** when executing privileged tools.
+MemoryGuard addresses both problems in one compact Python reference system (2,367 total lines across 15 files, with 1,346 lines in the core memoryguard package across 6 files). It separates what an agent **remembers** at write time from what an agent **trusts** when executing privileged tools.
 
 ## Cross-Session Memory
 
@@ -76,4 +76,4 @@ Recent memory security projects explore complementary parts of this problem spac
 - [MemGate (arXiv:2606.06054)](https://arxiv.org/abs/2606.06054) frames write-time memory admission as calibrated cascade routing across lightweight and heavyweight verifiers.
 - OWASP Agent Memory Guard provides schema validation, rule-based scanning, and hash-chain audit logging for general agent memory frameworks.
 
-MemoryGuard differs by pairing a zero-API local CPU decision model (`convaiinnovations/laya`) at write time with counterfactual Clean-Room non-interference and automatic trusted-plan recovery at action time in 1,798 lines of standard Python across 15 files (984 lines in the core memoryguard package across 6 files, alongside Google ADK multi-session integration in run_demo.py, agents/, and memoryguard/adk_middleware.py).
+MemoryGuard differs by pairing a zero-API local CPU decision model (`convaiinnovations/laya`) at write time with counterfactual Clean-Room non-interference and automatic trusted-plan recovery at action time in 2,367 lines of standard Python across 15 files (1,346 lines in the core memoryguard package across 6 files, alongside Google ADK multi-session integration in run_demo.py, agents/, and memoryguard/adk_middleware.py).

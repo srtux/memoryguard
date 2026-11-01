@@ -133,7 +133,7 @@ The script runs consecutive Session 1 and Session 2 interactions through `InMemo
 
 ## Test Coverage
 
-Running `python -m pytest -v` executes seven deterministic tests on a fresh clone without cloud credentials (verifying all 1,798 lines of Python across 15 files):
+Running `python -m pytest -v` executes seven deterministic tests on a fresh clone without cloud credentials (verifying all 2,367 lines of Python across 15 files):
 
 | Test Function | Verification Scope |
 | :--- | :--- |

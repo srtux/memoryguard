@@ -1,6 +1,6 @@
 # System Architecture
 
-MemoryGuard fits in 1,798 total lines of Python across 15 files, with 984 lines comprising the core `memoryguard/` package across 6 files (`memoryguard/__init__.py` at 67 lines, `memoryguard/memory_store.py` at 134 lines, `memoryguard/admission_gates.py` at 181 lines, `memoryguard/tool_interceptor.py` at 100 lines, `memoryguard/gemini_client.py` at 166 lines, and `memoryguard/adk_middleware.py` at 336 lines). Candidate notes pass through a local CPU write gate into an SQLite store with full-text search, and guarded Session 2 actions pass through a counterfactual Clean-Room check whenever untrusted notes appear in retrieval.
+MemoryGuard fits in 2,367 total lines of Python across 15 files, with 1,346 lines comprising the core `memoryguard/` package across 6 files (`memoryguard/__init__.py` at 84 lines, `memoryguard/memory_store.py` at 207 lines, `memoryguard/admission_gates.py` at 248 lines, `memoryguard/tool_interceptor.py` at 161 lines, `memoryguard/gemini_client.py` at 221 lines, and `memoryguard/adk_middleware.py` at 425 lines). Candidate notes pass through a local CPU write gate into an SQLite store with full-text search, and guarded Session 2 actions pass through a counterfactual Clean-Room check whenever untrusted notes appear in retrieval.
 
 ## Pipeline Dataflow
 
@@ -146,20 +146,20 @@ The `agents/` directory provides preconfigured ADK Web UI packages:
 
 ## Codebase Map
 
-The entire implementation fits in 1,798 lines of Python across 15 files (984 lines for the core `memoryguard/` package across 6 files):
+The entire implementation fits in 2,367 lines of Python across 15 files (1,346 lines for the core `memoryguard/` package across 6 files):
 
 | Path | Lines | Responsibility |
 | :--- | :---: | :--- |
-| `memoryguard/__init__.py` | 67 | Public API exports via `__all__` |
-| `memoryguard/memory_store.py` | 134 | `MemoryRecord`, `MemoryStore` (`add_memory`, `retrieve`, `max_similarity`, `active_tokens`), `note_similarity` |
-| `memoryguard/admission_gates.py` | 181 | `StockUnprotectedGate`, `LLMAdmissionGate`, `LexicalAdmissionGate`, `LayaAdmissionGate`, `get_laya_agent` |
-| `memoryguard/tool_interceptor.py` | 100 | `ToolInterceptor`, `calls_are_equivalent`, `_needs_clean_room`, `PRIVILEGED_TOOLS`, `SAFE_TOOLS` |
-| `memoryguard/gemini_client.py` | 166 | `load_dotenv_file`, `GeminiClient` (SQLite prompt cache + `tenacity` retry), `parse_json_payload` |
-| `memoryguard/adk_middleware.py` | 336 | `build_demo_agent`, `create_adk_model`, `DemoRuntime`, ADK model and tool lifecycle callbacks |
-| `run_demo.py` | 168 | Multi-session CLI demo comparing without_memory, unprotected_memory, and with_memoryguard |
-| `agents/` | 56 | ADK Web UI agent packages across 6 files |
-| `run_benchmark.py` | 318 | `ARCHITECTURES` (5 arms), `run_coding_arm`, `grade_coding_episode`, `evaluate_recall_slice`, `run_latency_microbenchmark` |
-| `tests/test_memoryguard.py` | 272 | 7 pytest functions covering store authority, gates, live Laya inference, Clean-Room, ADK demo, and replay |
+| `memoryguard/__init__.py` | 84 | Public API exports via `__all__` |
+| `memoryguard/memory_store.py` | 207 | `MemoryRecord`, `MemoryStore` (`add_memory`, `retrieve`, `max_similarity`, `active_tokens`), `note_similarity` |
+| `memoryguard/admission_gates.py` | 248 | `StockUnprotectedGate`, `LLMAdmissionGate`, `LexicalAdmissionGate`, `LayaAdmissionGate`, `get_laya_agent` |
+| `memoryguard/tool_interceptor.py` | 161 | `ToolInterceptor`, `calls_are_equivalent`, `_needs_clean_room`, `PRIVILEGED_TOOLS`, `SAFE_TOOLS` |
+| `memoryguard/gemini_client.py` | 221 | `load_dotenv_file`, `GeminiClient` (SQLite prompt cache + `tenacity` retry), `parse_json_payload` |
+| `memoryguard/adk_middleware.py` | 425 | `build_demo_agent`, `create_adk_model`, `DemoRuntime`, ADK model and tool lifecycle callbacks |
+| `run_demo.py` | 209 | Multi-session CLI demo comparing without_memory, unprotected_memory, and with_memoryguard |
+| `agents/` | 95 | ADK Web UI agent packages across 6 files |
+| `run_benchmark.py` | 385 | `ARCHITECTURES` (5 arms), `run_coding_arm`, `grade_coding_episode`, `evaluate_recall_slice`, `run_latency_microbenchmark` |
+| `tests/test_memoryguard.py` | 332 | 7 pytest functions covering store authority, gates, live Laya inference, Clean-Room, ADK demo, and replay |
 
 ### Public Python Interfaces
 
