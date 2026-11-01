@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from memoryguard.adk import build_demo_agent
-from memoryguard.store import MemoryStore
+from memoryguard.adk_middleware import build_demo_agent
+from memoryguard.memory_store import MemoryStore
 
 _db_path = Path(__file__).resolve().parent.parent.parent / ".cache" / "adk_unprotected.sqlite"
 _db_path.parent.mkdir(parents=True, exist_ok=True)

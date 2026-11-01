@@ -39,7 +39,7 @@ Run the offline test suite first (no credentials or cloud network access require
 
 ```bash
 python -m pytest -v
-python evaluate.py
+python run_benchmark.py
 ```
 
 The runner loads `.env` automatically and caches LLM responses in SQLite under `.cache/` so subsequent replays finish in seconds with zero API calls. The benchmark datasets (`benchmarks/coding_suite.json` and `benchmarks/personamem_slice.json`) are self-contained static JSON files checked directly into the repository.
@@ -53,8 +53,8 @@ MemoryGuard includes an interactive multi-session demo powered by the Google Age
 Run the multi-session comparison CLI:
 
 ```bash
-python demo.py            # live run with Gemini API or Vertex AI credentials
-python demo.py --offline  # hermetic offline run with zero API credentials
+python run_demo.py            # live run with Gemini API or Vertex AI credentials
+python run_demo.py --offline  # hermetic offline run with zero API credentials
 ```
 
 The script runs two consecutive sessions to demonstrate cross-session memory and security:
@@ -124,22 +124,23 @@ Key statistical and latency takeaways:
 
 ## Repository Structure
 
-The repository contains 1,768 lines of Python across 14 files (960 lines in the core `memoryguard/` package across 5 files):
+The repository contains 1,798 lines of Python across 15 files (984 lines in the core `memoryguard/` package across 6 files):
 
 | Path | Lines | Description |
 | :--- | :---: | :--- |
-| `memoryguard/__init__.py` | 65 | Public API exports via `__all__` |
-| `memoryguard/store.py` | 134 | SQLite and FTS5 memory store with trust tiers |
-| `memoryguard/gates.py` | 273 | Admission gates and Clean-Room tool interceptor |
-| `memoryguard/llm.py` | 166 | Gemini client with SQLite prompt cache and retries |
-| `memoryguard/adk.py` | 322 | Google ADK agent integration and lifecycle callbacks |
-| `demo.py` | 168 | Multi-session CLI demo comparing memory modes |
+| `memoryguard/__init__.py` | 67 | Public API exports via `__all__` |
+| `memoryguard/memory_store.py` | 134 | SQLite and FTS5 memory store with trust tiers |
+| `memoryguard/admission_gates.py` | 181 | Local and cloud write-time admission gates |
+| `memoryguard/tool_interceptor.py` | 100 | Action-time Clean-Room tool interceptor |
+| `memoryguard/gemini_client.py` | 166 | Gemini client with SQLite prompt cache and retries |
+| `memoryguard/adk_middleware.py` | 336 | Google ADK agent integration and lifecycle callbacks |
+| `run_demo.py` | 168 | Multi-session CLI demo comparing memory modes |
 | `agents/` | 56 | ADK Web UI agent packages across 6 files |
-| `evaluate.py` | 313 | Five-arm benchmark runner and evaluation harnesses |
-| `tests/test_memoryguard.py` | 271 | 7 offline unit, live Laya, ADK, and replay tests |
+| `run_benchmark.py` | 318 | Five-arm benchmark runner and evaluation harnesses |
+| `tests/test_memoryguard.py` | 272 | 7 offline unit, live Laya, ADK, and replay tests |
 | `benchmarks/coding_suite.json` | - | 48-episode coding benchmark across 11 software domains |
 | `benchmarks/personamem_slice.json` | - | 30-dialogue PersonaMem-v1 conversational recall benchmark |
-| `results/summary.json` | - | Evaluated benchmark metrics and per-episode execution logs |
+| `results/benchmark_results.json` | - | Evaluated benchmark metrics and per-episode execution logs |
 | `docs/` | - | Architecture, dataset, and evaluation documentation |
 | `.env.example` | - | Template environment configuration file |
 | `requirements.txt` | - | Python runtime dependencies |

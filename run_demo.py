@@ -13,8 +13,8 @@ from google.adk.models.llm_response import LlmResponse
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from memoryguard.adk import DEMO_MODES, build_demo_agent, create_adk_model
-from memoryguard.llm import has_live_credentials
+from memoryguard.adk_middleware import DEMO_MODES, build_demo_agent, create_adk_model
+from memoryguard.gemini_client import has_live_credentials
 
 SESSION1_TURNS: tuple[str, ...] = (
     "Morning! Grabbing a quick coffee before standup.",

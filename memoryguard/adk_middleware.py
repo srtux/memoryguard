@@ -11,8 +11,8 @@ from google.adk.models import BaseLlm
 from google.adk.models.google_llm import Gemini
 from google.genai import types
 
-from memoryguard.gates import LayaAdmissionGate, StockUnprotectedGate, ToolInterceptor
-from memoryguard.llm import (
+from memoryguard.admission_gates import LayaAdmissionGate, StockUnprotectedGate
+from memoryguard.gemini_client import (
     GeminiClient,
     has_live_credentials,
     load_api_key,
@@ -20,13 +20,14 @@ from memoryguard.llm import (
     parse_json_payload,
     resolve_model,
 )
-from memoryguard.store import (
+from memoryguard.memory_store import (
     TIER_EXTERNAL,
     TIER_NAMES,
     TIER_USER,
     MemoryRecord,
     MemoryStore,
 )
+from memoryguard.tool_interceptor import ToolInterceptor
 
 DEMO_MODES: tuple[str, ...] = ("without_memory", "unprotected_memory", "with_memoryguard")
 GUARDED_DEMO_TOOLS: tuple[str, ...] = ("run_bash", "read_file", "write_file", "http_post")
@@ -84,6 +85,7 @@ class DemoRuntime:
     interceptor: ToolInterceptor | None
     replan_client: GeminiClient | None = None
     fs: dict[str, str] = field(default_factory=lambda: dict(DEMO_REPO_FILES))
+    issues: dict[int, str] = field(default_factory=lambda: dict(DEMO_ISSUES))
     ingest_log: list[dict[str, Any]] = field(default_factory=list)
     tool_log: list[dict[str, Any]] = field(default_factory=list)
     turn_idx: int = 0
@@ -179,6 +181,8 @@ def build_demo_agent(
     store: MemoryStore | None = None,
     replan_client: GeminiClient | None = None,
     model: str | BaseLlm | None = None,
+    repo_files: dict[str, str] | None = None,
+    issues: dict[int, str] | None = None,
 ) -> tuple[LlmAgent, DemoRuntime]:
     """Build a Google ADK LlmAgent and DemoRuntime for one of the three comparison modes."""
     if mode not in DEMO_MODES:
@@ -193,7 +197,17 @@ def build_demo_agent(
         mem_store = store or MemoryStore()
         gate, interceptor = LayaAdmissionGate(), ToolInterceptor(mode="clean_room")
 
-    runtime = DemoRuntime(mode=mode, store=mem_store, gate=gate, interceptor=interceptor, replan_client=replan_client)
+    active_fs = dict(DEMO_REPO_FILES if repo_files is None else repo_files)
+    active_issues = dict(DEMO_ISSUES if issues is None else issues)
+    runtime = DemoRuntime(
+        mode=mode,
+        store=mem_store,
+        gate=gate,
+        interceptor=interceptor,
+        replan_client=replan_client,
+        fs=active_fs,
+        issues=active_issues,
+    )
     seen_invocations: dict[str, str | None] = {}
     turn_ctx: dict[str, tuple[str, list[MemoryRecord]]] = {}
 
@@ -216,7 +230,7 @@ def build_demo_agent(
     def read_github_issue(issue_id: int) -> dict[str, Any]:
         """Read a repository GitHub issue and evaluate it for EXTERNAL memory admission."""
         issue_num = int(issue_id)
-        text = DEMO_ISSUES.get(issue_num)
+        text = runtime.issues.get(issue_num)
         if text is None:
             return {"status": "error", "error": f"Issue #{issue_num} not found"}
         gate_res = runtime.ingest(text, TIER_EXTERNAL, f"github://issues/{issue_num}")

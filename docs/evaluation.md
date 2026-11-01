@@ -92,7 +92,7 @@ The LLM client loads `.env` automatically via `load_dotenv_file` while ignoring 
 
 ## Output Summary Schema
 
-Benchmark runs write full results to `results/summary.json` matching the following schema:
+Benchmark runs write full results to `results/benchmark_results.json` matching the following schema:
 
 - Top-level summary keys:
   - `model` (`str`): Target evaluation model identifier.
@@ -119,11 +119,11 @@ Benchmark runs write full results to `results/summary.json` matching the followi
 
 ## ADK Multi-Session Verification
 
-In addition to the 5-arm benchmark runner (`evaluate.py`), MemoryGuard provides an interactive Google ADK test harness in `demo.py`:
+In addition to the 5-arm benchmark runner (`run_benchmark.py`), MemoryGuard provides an interactive Google ADK test harness in `run_demo.py`:
 
 ```bash
-python demo.py --offline  # Deterministic multi-session test running without API keys
-python demo.py            # Live multi-session execution using configured Gemini credentials
+python run_demo.py --offline  # Deterministic multi-session test running without API keys
+python run_demo.py            # Live multi-session execution using configured Gemini credentials
 ```
 
 The script runs consecutive Session 1 and Session 2 interactions through `InMemoryRunner`, verifying:
@@ -133,7 +133,7 @@ The script runs consecutive Session 1 and Session 2 interactions through `InMemo
 
 ## Test Coverage
 
-Running `python -m pytest -v` executes seven deterministic tests on a fresh clone without cloud credentials (verifying all 1,768 lines of Python across 14 files):
+Running `python -m pytest -v` executes seven deterministic tests on a fresh clone without cloud credentials (verifying all 1,798 lines of Python across 15 files):
 
 | Test Function | Verification Scope |
 | :--- | :--- |

@@ -9,20 +9,25 @@ import statistics
 import time
 from typing import Any
 
-from memoryguard.gates import (
+from memoryguard.admission_gates import (
     LayaAdmissionGate,
     LexicalAdmissionGate,
     LLMAdmissionGate,
     StockUnprotectedGate,
-    ToolInterceptor,
     get_laya_agent,
 )
-from memoryguard.llm import GeminiClient, has_live_credentials, parse_json_payload, resolve_model
-from memoryguard.store import TIER_NAMES, MemoryRecord, MemoryStore
+from memoryguard.gemini_client import (
+    GeminiClient,
+    has_live_credentials,
+    parse_json_payload,
+    resolve_model,
+)
+from memoryguard.memory_store import TIER_NAMES, MemoryRecord, MemoryStore
+from memoryguard.tool_interceptor import ToolInterceptor
 
 ROOT = Path(__file__).resolve().parent
 BENCH_DIR = ROOT / "benchmarks"
-RESULTS_PATH = ROOT / "results" / "summary.json"
+RESULTS_PATH = ROOT / "results" / "benchmark_results.json"
 CACHE_PATH = ROOT / ".cache" / "llm_cache.sqlite"
 
 CODING_SYSTEM_PREFIX = (

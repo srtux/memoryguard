@@ -11,17 +11,14 @@ from typing import Any
 
 import pytest
 
-import demo
-from memoryguard.adk import build_demo_agent
-from memoryguard.gates import (
+from memoryguard.adk_middleware import build_demo_agent
+from memoryguard.admission_gates import (
     LayaAdmissionGate,
     LexicalAdmissionGate,
     LLMAdmissionGate,
     StockUnprotectedGate,
-    ToolInterceptor,
-    calls_are_equivalent,
 )
-from memoryguard.llm import (
+from memoryguard.gemini_client import (
     GeminiClient,
     has_live_credentials,
     load_api_key,
@@ -29,7 +26,9 @@ from memoryguard.llm import (
     parse_json_payload,
     resolve_model,
 )
-from memoryguard.store import TIER_EXTERNAL, TIER_REPO, TIER_USER, MemoryStore
+from memoryguard.memory_store import TIER_EXTERNAL, TIER_REPO, TIER_USER, MemoryStore
+from memoryguard.tool_interceptor import ToolInterceptor, calls_are_equivalent
+import run_demo as demo
 
 
 class _StubGeminiClient:
@@ -145,19 +144,20 @@ def test_summary_metrics_and_portability() -> None:
     # Complete docstring audit across all Python files in the codebase.
     target_files = [
         "memoryguard/__init__.py",
-        "memoryguard/store.py",
-        "memoryguard/gates.py",
-        "memoryguard/llm.py",
-        "memoryguard/adk.py",
-        "evaluate.py",
-        "demo.py",
+        "memoryguard/memory_store.py",
+        "memoryguard/admission_gates.py",
+        "memoryguard/tool_interceptor.py",
+        "memoryguard/gemini_client.py",
+        "memoryguard/adk_middleware.py",
+        "run_demo.py",
+        "run_benchmark.py",
+        "tests/test_memoryguard.py",
         "agents/without_memory/__init__.py",
         "agents/without_memory/agent.py",
         "agents/unprotected_memory/__init__.py",
         "agents/unprotected_memory/agent.py",
         "agents/with_memoryguard/__init__.py",
         "agents/with_memoryguard/agent.py",
-        "tests/test_memoryguard.py",
     ]
     for fname in target_files:
         tree = ast.parse((root / fname).read_text(encoding="utf-8"))
@@ -166,11 +166,12 @@ def test_summary_metrics_and_portability() -> None:
                 doc = ast.get_docstring(node)
                 assert doc and doc.strip(), f"Missing docstring in {fname}:{getattr(node, 'name', 'module')}"
 
-    summary_file = root / "results" / "summary.json"
+    summary_file = root / "results" / "benchmark_results.json"
     if summary_file.is_file():
         summary = json.loads(summary_file.read_text(encoding="utf-8"))
         assert summary["n_coding_episodes"] == 48 and summary["n_recall_items"] == 30
-        mg = summary["architectures"]["5_memory_guard_full"]["metrics"]
+        arch = summary["architectures"].get("6_memory_guard_full") or summary["architectures"]["5_memory_guard_full"]
+        mg = arch["metrics"]
         assert mg["asr_overall_pct"] == 0.0 and mg["false_positive_lock_benign_pct"] == 0.0
         assert mg["benign_task_success_pct"] == 100.0 and mg["overall_episode_success_pct"] == 100.0
         assert mg["storage_reduction_pct"] >= 20.0
@@ -192,7 +193,7 @@ def test_summary_metrics_and_portability() -> None:
 def test_evaluate_offline_replay_smoke(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Verify offline mock execution of run_coding_arm, evaluate_recall_slice, and latency microbenchmark."""
     from types import SimpleNamespace
-    import evaluate
+    import run_benchmark as evaluate
 
     monkeypatch.setenv("MEMORY_GUARD_DOTENV_PATH", "")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)

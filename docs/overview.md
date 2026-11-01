@@ -66,7 +66,7 @@ MemoryGuard combines four mechanisms so security, recall, and developer velocity
 2. `MemoryStore` persists notes in SQLite with `FTS5` BM25 full-text indexing, tracking provenance tiers (`USER=3`, `REPO=2`, `EXTERNAL=1`).
 3. `MemoryStore` uses `SequenceMatcher` similarity with authority dominance (`dup_thresh = 0.88`, `0.99` on Stock) and tiered novelty checking (`store.max_similarity(clean_text, min_tier=tier)`). Lower-tier near-duplicates of existing `USER` or `REPO` rules are dropped as `shadowed`, while equal- or higher-tier notes supersede older records.
 4. When an `EXTERNAL` note enters context for a guarded action, `ToolInterceptor` replans using `USER` and `REPO` notes alone. On Clean-Room mismatch, `ToolInterceptor` simply discards the poisoned proposal and executes the verified clean call (`clean_room_recovered`) without mutating SQLite, completing the developer's legitimate task safely.
-5. Google ADK integration (`memoryguard/adk.py`, `demo.py`, `agents/`) connects MemoryGuard into `LlmAgent` lifecycle callbacks (`before_model_callback` for admission and retrieval, and `before_tool_callback` for Clean-Room interception), enabling comparative evaluation in terminal CLI and visual `adk web agents` modes.
+5. Google ADK integration (`memoryguard/adk_middleware.py`, `run_demo.py`, `agents/`) connects MemoryGuard into `LlmAgent` lifecycle callbacks (`before_model_callback` for admission and retrieval, and `before_tool_callback` for Clean-Room interception), enabling comparative evaluation in terminal CLI and visual `adk web agents` modes.
 
 ## Related Work
 
@@ -76,4 +76,4 @@ Recent memory security projects explore complementary parts of this problem spac
 - [MemGate (arXiv:2606.06054)](https://arxiv.org/abs/2606.06054) frames write-time memory admission as calibrated cascade routing across lightweight and heavyweight verifiers.
 - OWASP Agent Memory Guard provides schema validation, rule-based scanning, and hash-chain audit logging for general agent memory frameworks.
 
-MemoryGuard differs by pairing a zero-API local CPU decision model (`convaiinnovations/laya`) at write time with counterfactual Clean-Room non-interference and automatic trusted-plan recovery at action time in 1,768 lines of standard Python across 14 files (960 lines in the core memoryguard package across 5 files, alongside Google ADK multi-session integration in demo.py, agents/, and memoryguard/adk.py).
+MemoryGuard differs by pairing a zero-API local CPU decision model (`convaiinnovations/laya`) at write time with counterfactual Clean-Room non-interference and automatic trusted-plan recovery at action time in 1,798 lines of standard Python across 15 files (984 lines in the core memoryguard package across 6 files, alongside Google ADK multi-session integration in run_demo.py, agents/, and memoryguard/adk_middleware.py).
