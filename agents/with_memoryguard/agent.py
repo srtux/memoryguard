@@ -9,6 +9,11 @@ This agent runs in "with_memoryguard" mode, combining defense stages:
 from __future__ import annotations
 
 from pathlib import Path
+import sys
+
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 from memoryguard.adk_middleware import build_demo_agent
 from memoryguard.memory_store import MemoryStore
