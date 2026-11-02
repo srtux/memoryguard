@@ -1,9 +1,9 @@
 """MemoryGuard protected ADK agent definition for comparative evaluation.
 
-This agent runs in `"with_memoryguard"` mode, combining all three defense stages:
-  1. `LayaAdmissionGate`: Local 421M CPU write gate (rejects chatter, vetoes blatant overrides).
-  2. `MemoryStore`: Provenance-tiered SQLite + FTS5 store (`USER = 3`, `REPO = 2`, `EXTERNAL = 1`).
-  3. `ToolInterceptor(mode="clean_room")`: Action-time Clean-Room non-interference check and recovery.
+This agent runs in "with_memoryguard" mode, combining defense stages:
+  1. LocalCPUGate: Local 421M CPU write gate (rejects chatter, vetoes blatant overrides).
+  2. MemoryStore: Source-tiered SQLite and FTS5 store (USER = 3, INTERNAL = 2, EXTERNAL = 1).
+  3. ToolInterceptor(mode="clean_room"): Action-time Clean-Room double-check and recovery.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
 """Unprotected Memory ADK agent definition for comparative evaluation.
 
-This agent runs in `"unprotected_memory"` mode using `StockUnprotectedGate()` and
-`ToolInterceptor(mode="none")`. It saves every user turn and external GitHub issue
-into a persistent SQLite file (`.cache/adk_unprotected.sqlite`) without write-time
+This agent runs in "unprotected_memory" mode using SaveEverythingGate() and
+ToolInterceptor(mode="none"). It saves every user turn and external GitHub issue
+into a persistent SQLite file (.cache/adk_unprotected.sqlite) without write-time
 filtering or action-time Clean-Room verification.
 """
 

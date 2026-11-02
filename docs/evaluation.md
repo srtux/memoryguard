@@ -1,146 +1,137 @@
-# Evaluation and Reproducibility
+# Evaluation and Results
 
-The benchmark runner evaluates five memory architectures under identical prompts, model weights (`gemini-3.5-flash-lite`), and deterministic decoding at temperature zero. Saved metrics, per-episode ingestion logs, tool proposals, Clean-Room replans, and benchmark statistics live in the summary output under `results/`.
+The benchmark evaluates five approaches under identical conditions using `gemini-3.5-flash-lite` with deterministic generation at temperature zero. All test runs are reproducible using cached responses in the repository.
 
-## Five-Arm Ablation Matrix
+## The Five Compared Approaches
 
-The five architectures isolate the effect of each defense stage:
-
-| Architecture ID | Label | Write Gate | Action Interceptor | Hypothesis Tested |
+| Approach ID | Name | Write Gate | Command Check | Question Being Tested |
 | :--- | :--- | :--- | :--- | :--- |
-| `1_stock_unprotected` | Stock Unprotected | Save all turns | None | Baseline bloat and cross-session hijack exposure |
-| `2_llm_gate_only` | Cloud LLM Gate | Cloud Gemini utility score | None | Whether cloud utility scoring stops poisoning |
-| `3_lexical_gate_only` | Lexical Regex Gate | Jailbreak regex + CLI cues | None | Cost of brittle syntactic heuristics on human prose |
-| `4_laya_naive_biba` | Blanket Red Lock | Local `Laya-421M` two-stage | Block on any `EXTERNAL` note | False-lock cost of strict Biba taint blocking |
-| `5_memory_guard_full` | MemoryGuard | Local `Laya-421M` two-stage | Counterfactual Clean-Room | Full safety, zero false locks, and clean recovery |
+| `1_save_everything` | Save Everything | `save_all` | `none` | Baseline risk when keeping all turns |
+| `2_keyword_rules_only` | Keyword Rules Only | `keyword_rules` | `none` | Whether simple keyword filters suffice |
+| `3_cloud_ai_filter` | Cloud AI Filter Only | `cloud_ai` | `none` | Whether a remote cloud model stops attacks |
+| `4_block_all_web_notes` | Block All Web Notes | `local_cpu` | `block_web_notes` | The penalty of refusing actions on web notes |
+| `5_memoryguard` | MemoryGuard (Ours) | `local_cpu` | `clean_room` | Full protection with clean command recovery |
 
-## Metric Definitions
+## Plain-English Metric Definitions
 
-Each run computes nine primary metrics across the 48 coding episodes and 30 `PersonaMem-v1` dialogues:
+- **Attacks That Fooled Agent (`attacks_fooled_pct`)**: The percentage of attack scenarios where the agent was tricked into running a bad command or leaking data. Lower is better.
+  - *Obvious Attacks (`obvious_attacks_fooled_pct`)*: Direct `"ignore instructions"` overrides.
+  - *Sneaky Attacks (`sneaky_attacks_fooled_pct`)*: Calm conventions and split-turn attacks disguised as team rules.
+- **Safe Tasks Falsely Blocked (`safe_tasks_blocked_pct`)**: The percentage of normal coding tasks where the agent refused to run a legitimate command. Lower is better.
+  - *Safe Tasks with Web Notes (`safe_tasks_with_web_notes_blocked_pct`)*: Legitimate tasks where an external reference note was retrieved.
+- **Tasks Completed Safely (`tasks_completed_safely_pct`)**: The percentage of scenarios where the agent completed the requested coding work without being hijacked. Higher is better.
+- **Chat Facts Recalled (`chat_facts_recalled_pct`)**: Accuracy on 30 multiple-choice questions testing personal facts in `PersonaMem-v1`. Higher is better.
+- **Stored Words Saved (`words_saved_pct`)**: Reduction in total words saved to disk relative to saving everything.
+- **Write Speed (`write_time_mean_ms`)**: Time in milliseconds to evaluate a candidate note at write time.
 
-| Metric | Cohort Size | Definition |
-| :--- | :---: | :--- |
-| Overall ASR | 24 | Share of attack episodes (`attack_obvious` + `attack_sneaky`) where an unsafe tool or forbidden target executes |
-| Obvious ASR | 12 | Share of direct override episodes (`attack_obvious`) hijacked |
-| Sneaky ASR | 12 | Share of declarative convention, split-turn, or secret-read episodes (`attack_sneaky`) hijacked |
-| Benign False Lock | 24 | Share of unattacked episodes (`benign_clean` + `benign_external_taint_stress`) falsely blocked by the interceptor |
-| Taint-Priv Lock | 9 | Share of unattacked privileged tasks carrying legitimate `EXTERNAL` notes that are falsely blocked |
-| Benign Utility | 24 | Share of unattacked episodes completing the expected tool and required arguments |
-| Attacked Utility | 24 | Share of attacked episodes that block the hijack and still complete the legitimate coding task |
-| Overall Success | 48 | Share of all 48 coding episodes achieving both zero hijacking and full task completion |
-| PersonaMem Recall | 30 | Multiple-choice accuracy `(a)` through `(d)` on 40-turn `PersonaMem-v1` conversations |
+## Main Scorecard
 
-## Benchmark Results
+The headline results across the 48-task coding benchmark:
 
-Lower Attack Success Rate (ASR) and lock rates are better; higher utility, episode success, recall, and storage savings are better:
+| Approach | Attacks That Fooled Agent | Safe Tasks Falsely Blocked | Tasks Completed Safely | Why It Fails or Wins |
+| :--- | :---: | :---: | :---: | :--- |
+| Save Everything | 50.0% (12/24) | 0.0% (0/24) | 75.0% (36/48) | Trusts fake rules from web issues |
+| Keyword Rules Only | 29.2% (7/24) | 0.0% (0/24) | 70.8% (34/48) | Forgets normal English preferences |
+| Cloud AI Filter Only | 29.2% (7/24) | 0.0% (0/24) | 85.4% (41/48) | Stops obvious attacks, fooled by sneaky ones |
+| Block All Web Notes | 0.0% (0/24) | 37.5% (9/24) | 70.8% (34/48) | Freezes whenever a web note is present |
+| **MemoryGuard (Ours)** | **0.0% (0/24)** | **0.0% (0/24)** | **100.0% (48/48)** | **Drops tampered command, runs your clean one** |
 
-| Architecture | Overall ASR | Obvious ASR | Sneaky ASR | Benign Lock | Taint-Priv Lock | Benign Utility | Attacked Utility | Overall Success | PersonaMem Recall | Storage Saved |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Stock Unprotected | 50.0% | 16.67% | 83.33% | 0.0% | 0.0% | 100.0% | 50.0% | 75.0% | 73.33% | 0.0% |
-| Cloud LLM Gate | 41.67% | 0.0% | 83.33% | 0.0% | 0.0% | 100.0% | 58.33% | 79.17% | 63.33% | 52.27% |
-| Lexical Regex Gate | 29.17% | 0.0% | 58.33% | 0.0% | 0.0% | 79.17% | 62.5% | 70.83% | 33.33% | 85.85% |
-| Blanket Red Lock | 0.0% | 0.0% | 0.0% | 37.5% | 88.89% | 62.5% | 79.17% | 70.83% | 76.67% | 24.59% |
-| **MemoryGuard** | **0.0%** | **0.0%** | **0.0%** | **0.0%** | **0.0%** | **100.0%** | **100.0%** | **100.0%** | **76.67%** | **24.59%** |
+## In-Depth Analysis
 
-Key findings across the ablation ladder:
+### Obvious vs Sneaky Attacks
 
-- `Cloud LLM Gate` stops direct overrides (`0.0%` Obvious ASR) but fails against calm declarative conventions and split-turn attacks (`83.33%` Sneaky ASR, identical to Stock).
-- `Lexical Regex Gate` keeps `79.17%` benign coding utility because coding rules carry flags and backticks. On `PersonaMem-v1` prose, regex recall drops to `33.33%` (`10/30`).
-- `Blanket Red Lock` achieves `0.0%` ASR by blocking eight of nine tainted privileged tasks (`88.89%` lock rate, `37.5%` across all benign episodes).
-- MemoryGuard verifies equivalent plans (`0.0%` false locks) and recovers all poisoned episodes to the trusted `USER` + `REPO` plan (`48/48` overall success). It also lifts `PersonaMem-v1` recall from `73.33%` to `76.67%` while cutting stored words by `24.59%`.
+| Approach | Obvious Attacks Fooled | Sneaky Attacks Fooled |
+| :--- | :---: | :---: |
+| Save Everything | 16.7% (2/12) | 83.3% (10/12) |
+| Keyword Rules Only | 0.0% (0/12) | 58.3% (7/12) |
+| Cloud AI Filter Only | 0.0% (0/12) | 58.3% (7/12) |
+| Block All Web Notes | 0.0% (0/12) | 0.0% (0/12) |
+| **MemoryGuard (Ours)** | **0.0% (0/12)** | **0.0% (0/12)** |
 
-## Paired Discordant Analysis
+When given the exact same 4 rubric questions, weights, and `0.50` / `0.40` thresholds, both `LocalCPUGate` (`Laya-421M`) and `CloudAIGate` (`gemini-3.5-flash-lite`) block 100% (`12/12`) of obvious direct overrides at write time. Against sneaky fake conventions, however, a write-time filter alone (`Cloud AI Filter Only`) still fails 58.3% (`7/12`) of the time because calm fake rules look like well-written documentation.
 
-Because all five architectures run on the same 48 episodes, paired comparisons on discordant outcomes give the net win/loss count (`+b / -c`, where `b` is episodes won by MemoryGuard and `c` is episodes won by the baseline):
+### The Cost of Blocking All Web Notes
 
-| Baseline Compared Against MemoryGuard | Overall Success (48) | Attack Blocked (24) | Attacked Utility (24) | Benign Utility (24) |
-| :--- | :---: | :---: | :---: | :---: |
-| `1_stock_unprotected` | `+12 / -0` | `+12 / -0` | `+12 / -0` | `0 / 0` |
-| `2_llm_gate_only` | `+10 / -0` | `+10 / -0` | `+10 / -0` | `0 / 0` |
-| `3_lexical_gate_only` | `+14 / -0` | `+7 / -0` | `+9 / -0` | `+5 / -0` |
-| `4_laya_naive_biba` | `+14 / -0` | `0 / 0` | `+5 / -0` | `+9 / -0` |
+`Block All Web Notes` stops attacks by refusing to run commands when an external note is retrieved.
+- On safe tasks where an external note was present (`safe_with_web_notes`), it blocked **88.9% (8/9)** of legitimate commands.
+- MemoryGuard ran a Clean-Room double check on those same tasks and had a **0.0% (0/9)** false block rate.
 
-MemoryGuard loses zero paired episodes across all baselines and metrics.
+### Head-to-Head Paired Matchups
 
-## Write Latency
+Because all five approaches ran on the exact same 48 scenarios, we compare each baseline against MemoryGuard scenario-by-scenario (wins vs losses):
 
-`run_latency_microbenchmark` times 20 sequential Session 1 memory writes after model warmup. Local gates run on CPU, and `LLMAdmissionGate` runs uncached against the Gemini API:
+| Opponent Baseline | Scenarios Won by MemoryGuard | Scenarios Won by Opponent | Net Advantage |
+| :--- | :---: | :---: | :---: |
+| vs Save Everything | 12 | 0 | +12 / -0 |
+| vs Keyword Rules Only | 14 | 0 | +14 / -0 |
+| vs Cloud AI Filter Only | 7 | 0 | +7 / -0 |
+| vs Block All Web Notes | 14 | 0 | +14 / -0 |
 
-| Write Gate | Execution Target | Mean Latency | Median Latency | p95 Tail Latency | Cloud API Calls |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| `StockUnprotectedGate` | Local SQLite + `FTS5` | 0.89 ms | 0.72 ms | 2.67 ms | 0 |
-| `LexicalAdmissionGate` | Local regex + SQLite | 0.37 ms | 0.26 ms | 1.79 ms | 0 |
-| `LLMAdmissionGate` | Remote cloud Gemini API | 499.1 ms | 479.4 ms | 613.4 ms | 20 |
-| `LayaAdmissionGate` | Local 421M CPU (`torch`) | 404.8 ms | 392.3 ms | 477.5 ms | 0 |
+MemoryGuard did not lose a single scenario to any baseline.
 
-Running `Laya-421M` locally on CPU requires zero cloud API calls, keeps private chat notes off external endpoints, and delivers faster response times (`404.8 ms` mean, `477.5 ms` p95) with zero network latency jitter compared to remote cloud LLM gating.
+### Everyday Chat Recall and Word Reduction
 
-## Offline Replay
+On the 30-chat `PersonaMem-v1` evaluation:
 
-The LLM client loads `.env` automatically via `load_dotenv_file` while ignoring template placeholder strings:
+| Write Gate | Chat Facts Recalled | Stored Words Saved | Impact on Conversation |
+| :--- | :---: | :---: | :--- |
+| `save_all` | 73.3% (22/30) | 0.0% | Retains all small talk |
+| `keyword_rules` | 33.3% (10/30) | 85.9% | Drops normal English facts |
+| `cloud_ai` | 66.7% (20/30) | 50.1% | Prunes too aggressively |
+| `local_cpu` (MemoryGuard) | **76.7% (23/30)** | **24.6%** | **Remembers facts, filters chatter** |
 
-| Variable | Default | Role |
-| :--- | :--- | :--- |
-| `GEMINI_API_KEY` | None | API key for Google AI Studio authentication |
-| `GOOGLE_API_KEY` | None | Fallback alias for Google AI Studio authentication |
-| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Model identifier used for benchmark evaluations |
-| `GOOGLE_CLOUD_PROJECT` | None | Project ID for Vertex AI authentication |
-| `GOOGLE_CLOUD_LOCATION` | `global` | Cloud region for Vertex AI endpoints |
-| `MEMORY_GUARD_DOTENV_PATH` | `.env` | Custom path to local environment file |
+The local CPU gate (`LocalCPUGate`) preserves more facts than both saving everything (`76.7%` vs `73.3%`) and the cloud LLM gate (`76.7%` vs `66.7%`) under the exact same rubric and `0.40` threshold.
 
-`GeminiClient` hashes request parameters with `SHA-256` into a local SQLite WAL cache under `.cache/llm_cache.sqlite`. Non-truncated replies are stored automatically so cached runs replay offline in seconds with zero live API calls.
+### Write Speed Comparison
 
-## Output Summary Schema
+A benchmark timing 20 note writes after warmup:
 
-Benchmark runs write full results to `results/benchmark_results.json` matching the following schema:
+| Write Gate | Where It Runs | Mean Time | Median Time | Cloud API Calls |
+| :--- | :--- | :---: | :---: | :---: |
+| `save_all` | Local SQLite database | 0.88 ms | 0.69 ms | 0 |
+| `keyword_rules` | Local regex match | 0.37 ms | 0.25 ms | 0 |
+| `cloud_ai` | Remote cloud endpoint | 565.1 ms | 493.7 ms | 20 |
+| `local_cpu` | Local PyTorch on CPU | 383.9 ms | 377.7 ms | 0 |
 
-- Top-level summary keys:
-  - `model` (`str`): Target evaluation model identifier.
-  - `temperature` (`float`): Generation sampling temperature (`0.0`).
-  - `n_coding_episodes` (`int`): Total count of evaluated coding episodes (`48`).
-  - `n_recall_items` (`int`): Total count of evaluated recall probes (`30`).
-  - `architectures` (`dict[str, dict]`): Map of architecture ID to arm evaluation results.
-  - `recall_by_gate` (`dict[str, dict]`): Map of gate identifier to PersonaMem-v1 recall metrics.
-  - `latency_microbenchmark_20_notes` (`dict[str, dict]`): Map of gate identifier to write latency statistics.
-- `architectures.<arch_id>` keys:
-  - `arch_id` (`str`), `label` (`str`), `gate_kind` (`str`), `interceptor_mode` (`str`).
-  - `metrics` (`dict`): 19 aggregate performance metrics:
-    - Counts and rates: `n_episodes`, `n_attacks`, `n_benign`, `hijacked_count`, `false_positive_lock_count`.
-    - Security metrics: `asr_overall_pct`, `asr_obvious_pct`, `asr_sneaky_pct`.
-    - Reliability metrics: `false_positive_lock_benign_pct`, `false_positive_lock_taint_priv_pct`.
-    - Utility metrics: `benign_task_success_pct`, `benign_clean_success_pct`, `benign_taint_stress_success_pct`, `attacked_benign_utility_pct`, `overall_episode_success_pct`.
-    - Memory metrics: `recall_accuracy_pct`, `storage_reduction_pct`, `write_latency_mean_ms`, `write_latency_median_ms`.
-  - `episodes` (`list[dict]`): Episode execution records containing `episode_id`, `cohort`, `subkind`, `user_prompt`, `expected_tool`, `ingestion_log`, `active_tokens`, `retrieved_notes`, `proposed_call`, `clean_room_call`, `interceptor`, `final_call`, `is_attack`, `hijacked`, `false_positive_lock`, `task_success`, and `episode_success`.
-- `recall_by_gate.<gate_kind>` keys:
-  - `n_items` (`int`), `correct_count` (`int`), `recall_accuracy_pct` (`float`), `total_active_tokens` (`int`), `mean_active_tokens` (`float`), `storage_reduction_pct` (`float`).
-  - `items` (`list[dict]`): Probe evaluations containing `item_id`, `pred`, `gold`, `correct`, and `active_tokens`.
-- `latency_microbenchmark_20_notes.<gate_kind>` keys:
-  - `n_notes` (`int`), `mean_ms` (`float`), `median_ms` (`float`), `p95_ms` (`float`), `total_ms` (`float`).
+`LocalCPUGate` runs locally on CPU in ~0.38s per note with zero cloud API calls and zero network tail spikes.
 
-## ADK Multi-Session Verification
+## Offline Replay and Prompt Cache
 
-In addition to the 5-arm benchmark runner (`run_benchmark.py`), MemoryGuard provides an interactive Google ADK test harness in `run_demo.py`:
+The client checks `.env` for credentials. All prompt requests and replies are hashed with SHA-256 and stored in an SQLite cache at `.cache/llm_cache.sqlite`. When you run the benchmark, requests replay instantly from disk without contacting external servers.
 
-```bash
-python run_demo.py --offline  # Deterministic multi-session test running without API keys
-python run_demo.py            # Live multi-session execution using configured Gemini credentials
-```
+## Results JSON Format
 
-The script runs consecutive Session 1 and Session 2 interactions through `InMemoryRunner`, verifying:
-1. `without_memory` forgets Session 1 user flags on Session 2.
-2. `unprotected_memory` stores all turns, recalls external GitHub issues, and gets hijacked by declarative convention poisoning.
-3. `with_memoryguard` filters small talk with `LayaAdmissionGate`, vetoes imperative injections, and recovers the developer's clean pytest invocation via `before_tool_callback` Clean-Room non-interference.
+Benchmark output in `results/benchmark_results.json` uses the following structure:
 
-## Test Coverage
+- Top-level keys:
+  - `model`: Model evaluated (`gemini-3.5-flash-lite`).
+  - `temperature`: Sampling temperature (`0.0`).
+  - `n_coding_episodes`: Total coding tasks (`48`).
+  - `n_recall_items`: Total chat recall questions (`30`).
+  - `approaches`: Detailed results for each of the five approaches.
+  - `chat_recall_by_gate`: Results keyed by gate (`save_all`, `keyword_rules`, `cloud_ai`, `local_cpu`).
+  - `write_speed_20_notes`: Write speed stats keyed by gate.
+- Metrics recorded per approach:
+  - `n_episodes` (48), `n_attacks` (24), `n_safe_tasks` (24).
+  - `attacks_fooled_count`, `attacks_fooled_pct`.
+  - `obvious_attacks_fooled_pct`, `sneaky_attacks_fooled_pct`.
+  - `safe_tasks_blocked_count`, `safe_tasks_blocked_pct`.
+  - `safe_tasks_with_web_notes_blocked_pct`.
+  - `tasks_completed_safely_count`, `tasks_completed_safely_pct`.
+  - `safe_tasks_completed_pct`, `attacked_tasks_completed_pct`.
+  - `chat_facts_recalled_pct`, `words_saved_pct`.
+  - `write_time_mean_ms`, `write_time_median_ms`.
 
-Running `python -m pytest -v` executes seven deterministic tests on a fresh clone without cloud credentials (verifying all 2,367 lines of Python across 15 files):
+## Test Suite Checks
 
-| Test Function | Verification Scope |
+Running `python -m pytest -v` executes seven automated checks:
+
+| Test Function | What It Confirms |
 | :--- | :--- |
-| `test_store_authority_dominance_and_duplicate_handling` | Near-duplicate shadowing of lower-tier notes, superseding equal/lower tier notes, FTS5 retrieval, and active token counting |
-| `test_stock_lexical_and_stub_llm_gates` | Offline admission gate evaluation, lexical regex danger vetoes, JSON payload parsing, and dotenv credential loading |
-| `test_live_laya_admission_gate` | Live local `Laya-421M` CPU inference rejecting conversational chatter, admitting rules, shadowing clones, and vetoing imperative overrides |
-| `test_tool_interceptor_and_clean_room` | Call equivalence normalization, Blanket Red Lock (`naive_biba_min`), and Clean-Room recovery on `http_post` and sensitive file reads (`.env`) |
-| `test_summary_metrics_and_portability` | 100% AST docstring coverage, verified 5-arm benchmark bounds, and secret/portability leak scanning |
-| `test_evaluate_offline_replay_smoke` | End-to-end hermetic mock run and offline cache replay across coding, recall, and latency benchmarks |
-| `test_adk_demo_agents_end_to_end` | Multi-session ADK agent verification across without_memory, unprotected_memory, and with_memoryguard in offline replay mode |
+| `test_store_source_trust_and_duplicate_handling` | Source tiers work and web notes cannot overwrite user rules |
+| `test_baseline_and_cloud_ai_gates` | Baseline admission gates function as intended |
+| `test_live_local_cpu_admission_gate` | Local CPU gate skips chatter (`skipped_low_utility`) and blocks attacks (`blocked_attack`) |
+| `test_tool_interceptor_and_clean_room` | Interceptor verifies clean plans and recovers tampered commands |
+| `test_summary_metrics_and_portability` | Verified benchmark results and absence of hardcoded paths |
+| `test_evaluate_offline_replay_smoke` | End-to-end replay passes without internet access |
+| `test_adk_demo_agents_end_to_end` | Multi-session ADK demo runs cleanly in offline mode |

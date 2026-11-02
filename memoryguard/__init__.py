@@ -1,9 +1,9 @@
-"""MemoryGuard: Write-time admission gating and action-time Clean-Room guard for AI agents.
+"""MemoryGuard: Write-time memory gating and action-time Clean-Room guard for AI agents.
 
-This file (`__init__.py`) marks the `memoryguard` folder as a Python package and
+This file (__init__.py) marks the memoryguard folder as a Python package and
 re-exports the main classes, constants, and helper functions from each submodule.
 That way, other scripts can simply write:
-    from memoryguard import MemoryStore, LayaAdmissionGate, ToolInterceptor
+    from memoryguard import MemoryStore, LocalCPUGate, ToolInterceptor
 instead of importing from each internal file separately.
 """
 
@@ -17,16 +17,16 @@ from memoryguard.adk_middleware import (
     create_adk_model,
 )
 
-# 2. Write-time admission gates (Stage 1): decide which notes are safe and useful to save.
+# 2. Write-time admission gates: decide which notes are safe and useful to save.
 from memoryguard.admission_gates import (
-    LayaAdmissionGate,
-    LexicalAdmissionGate,
-    LLMAdmissionGate,
-    StockUnprotectedGate,
-    get_laya_agent,
+    CloudAIGate,
+    KeywordRuleGate,
+    LocalCPUGate,
+    SaveEverythingGate,
+    get_local_cpu_model,
 )
 
-# 3. Gemini LLM client wrapper, .env configuration loader, and SQLite response cache.
+# 3. Gemini AI client wrapper, .env configuration loader, and SQLite response cache.
 from memoryguard.gemini_client import (
     DEFAULT_MODEL,
     GeminiClient,
@@ -37,44 +37,48 @@ from memoryguard.gemini_client import (
     resolve_model,
 )
 
-# 4. Provenance-tiered SQLite + FTS5 memory store (Stage 2) with Biba trust levels.
+# 4. Source-tiered SQLite and FTS5 memory store with trust levels.
 from memoryguard.memory_store import (
     TIER_EXTERNAL,
+    TIER_INTERNAL,
     TIER_NAMES,
-    TIER_REPO,
     TIER_USER,
     MemoryRecord,
     MemoryStore,
     note_similarity,
 )
 
-# 5. Action-time Clean-Room tool interceptor (Stage 3): verifies tool calls before execution.
+# 5. Action-time Clean-Room tool interceptor: verifies tool calls before execution.
 from memoryguard.tool_interceptor import (
+    READ_ONLY_TOOLS,
+    SENSITIVE_TOOLS,
     ToolInterceptor,
     calls_are_equivalent,
 )
 
-# `__all__` explicitly lists the public symbols exported when someone imports `memoryguard`.
+# __all__ explicitly lists the public symbols exported when importing memoryguard.
 __all__ = [
+    "CloudAIGate",
     "DEFAULT_MODEL",
     "DEMO_MODES",
     "DemoRuntime",
     "GeminiClient",
-    "LayaAdmissionGate",
-    "LexicalAdmissionGate",
-    "LLMAdmissionGate",
+    "KeywordRuleGate",
+    "LocalCPUGate",
     "MemoryRecord",
     "MemoryStore",
-    "StockUnprotectedGate",
+    "READ_ONLY_TOOLS",
+    "SENSITIVE_TOOLS",
+    "SaveEverythingGate",
     "TIER_EXTERNAL",
+    "TIER_INTERNAL",
     "TIER_NAMES",
-    "TIER_REPO",
     "TIER_USER",
     "ToolInterceptor",
     "build_demo_agent",
     "calls_are_equivalent",
     "create_adk_model",
-    "get_laya_agent",
+    "get_local_cpu_model",
     "has_live_credentials",
     "load_api_key",
     "load_dotenv_file",
